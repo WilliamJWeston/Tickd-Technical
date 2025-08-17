@@ -1,3 +1,5 @@
+using API.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -17,22 +19,22 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Ensure MeterReadingService is registered
+builder.Services.AddScoped<MeterReadingService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Use CORS middleware
-app.UseCors("AllowBlazorFrontend");
-
 app.UseHttpsRedirection();
-
+app.UseCors("AllowBlazorFrontend");
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

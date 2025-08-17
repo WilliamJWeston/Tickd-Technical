@@ -7,11 +7,11 @@ namespace Frontend.Services
 {
     public class MeterClientSvc
     {
-        public readonly HttpService _httpClient;
+        public readonly HttpService _httpService;
 
         public MeterClientSvc(HttpService httpService) 
         {
-            _httpClient = httpService;
+            _httpService = httpService;
         }
 
         public async Task<Result> UploadMeterReadings(IBrowserFile file)
@@ -21,7 +21,8 @@ namespace Frontend.Services
                 return Result.Error("No file provided");
             }
 
-            return await _httpClient.PostFileAsync("MeterReading/meter-reading-uploads ", file);
+            var result = await _httpService.PostFileAsync("MeterReading/meter-reading-uploads", file);
+            return result;
         }
     }
 }

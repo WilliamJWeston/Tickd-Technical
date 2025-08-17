@@ -1,7 +1,94 @@
-﻿@page "/"
+﻿@using FluentValidation
+@using Frontend.Services
+@using Models.Dtos
+@using Models.Validation
+@using Severity = MudBlazor.Severity
 
-<PageTitle>Home</PageTitle>
+@inject ISnackbar Snackbar
+@inject MeterClientSvc meterClientSvc
 
-<h1>Hello, world!</h1>
+@page "/"
 
-Welcome to your new app.
+<MudContainer Class="mt-16">
+
+    @* Page Headers *@
+    <MudText Typo="Typo.h3" Align="Align.Center" GutterBottom="true">Meter Reading Upload</MudText>
+    <MudText Align="Align.Center">Please upload your Meter Readings here in '.CSV' format.</MudText>
+
+    @* Card Item *@
+    <MudItem xs="12" sm="12" md="12">
+        <MudCard Elevation="25" Class="rounded-lg pb-4">
+
+            <MudForm Model="@model" @ref="@form" Validation="@(ValidationRules.ValidateValue)" ValidationDelay="0">
+                <MudCardContent>
+                    
+                    <MudStack>
+                        <MudTextField @bind-Value="model.Name" For="@(() => model.Name)" Immediate="true" Label="Name" />
+                        <MudGrid Justify="@Justify.FlexEnd" Spacing="1">
+                            <MudItem>
+                                <MudFileUpload @ref="@_fileUpload" T="IBrowserFile" For="@(() => model.File)" @bind-Files="model.File" OnFilesChanged="UploadFiles"
+                                               Accept=".csv">
+
+                                    <ActivatorContent>
+                                        <MudButton Variant="Variant.Filled"
+                                                   Color="Color.Primary"
+                                                   StartIcon="@Icons.Material.Filled.CloudUpload">
+                                            Upload Files
+                                        </MudButton>
+                                    </ActivatorContent>
+                                </MudFileUpload>
+                            </MudItem>
+                            <MudItem>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Clear" OnClick="@ClearAsync">
+                                    Clear Files
+                                </MudButton>
+                            </MudItem>
+                            <MudItem>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">Submit</MudButton>
+                            </MudItem>
+
+                        </MudGrid>
+                    </MudStack>
+
+                    @if(model.File != null)
+                    {
+                        <MudItem Icon="@Icons.Material.Filled.AttachFile" @key="@model.File">
+                            @model.File.Name <code>@model.File.Size bytes</code>
+                        </MudItem>
+                    }
+
+                </MudCardContent>
+            </MudForm>
+
+        </MudCard>
+    </MudItem>
+        
+</MudContainer>
+
+@code
+{
+    private MudForm form;
+    private FileModelDto model = new();
+    private FileUploadFormValidation ValidationRules = new();
+    private MudFileUpload<IBrowserFile> _fileUpload;
+
+    private void UploadFiles(InputFileChangeEventArgs e)
+    {
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        Snackbar.Add($"{model.File.Name.Split(".").Last()} Recieved.", Severity.Info);
+    }
+
+    private async Task Submit()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+            await meterClientSvc.UploadMeterReadings(model.File);
+            Snackbar.Add("Submitted!");
+        }
+    }
+
+    private Task ClearAsync() => _fileUpload?.ClearAsync() ?? Task.CompletedTask;
+
+}
