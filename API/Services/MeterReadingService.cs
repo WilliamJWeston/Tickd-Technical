@@ -1,16 +1,24 @@
-﻿using Ardalis.Result;
+﻿using API.Interfaces;
+using Ardalis.Result;
 using CsvHelper;
 using CsvHelper.Configuration;
+using Microsoft.Extensions.Logging;
+using Models.Dtos;
+using Models.Maps;
 using Models.Models;
 using System.Globalization;
 
 namespace API.Services
 {
-    public class MeterReadingService
+    public class MeterReadingService : IMeterReadingService
     {
-        public MeterReadingService() { }
+        private readonly RepositoryService _repository;
+        public MeterReadingService(RepositoryService repository) 
+        {
+            _repository = repository;
+        }
 
-        public async Task<Result> UploadFile(IFormFile file)
+        public async Task<Result<MeterReadingUploadResultDto>> UploadFile(IFormFile file)
         {
             // Check file
             if (file == null || file.Length == 0)
@@ -31,6 +39,7 @@ namespace API.Services
                 TrimOptions = TrimOptions.Trim,
                 MissingFieldFound = null
             });
+            csv.Context.RegisterClassMap<MeterReadingMap>();
 
             // Read the CSV header
             await csv.ReadAsync();
@@ -42,8 +51,23 @@ namespace API.Services
                 rowNumber++;
                 try
                 {
+                    // Try reading the record
                     var record = csv.GetRecord<MeterReading>();
-                    successfulRecords.Add(record);
+                    if (record == null)
+                    {
+                        failedRecords.Add($"Row {rowNumber}: Invalid record format.");
+                    }
+
+                    // Save the record to DB
+                    var saveResult = await _repository.SaveMeterReadingAsync(record);
+                    if (saveResult.IsSuccess)
+                    {
+                        successfulRecords.Add(record);
+                    }
+                    else
+                    {
+                        failedRecords.Add($"Row {rowNumber}: Failed to save - {saveResult.Errors.FirstOrDefault() ?? "Unknown error"}");
+                    }
                 }
                 catch (Exception ex)
                 { 
@@ -51,7 +75,14 @@ namespace API.Services
                 }
             }
 
-            return Result.Success();
+            MeterReadingUploadResultDto meterReadingUploadResult = new MeterReadingUploadResultDto() 
+            { 
+                SuccessfulRecords = successfulRecords.Count,
+                FailedRecords = failedRecords.Count,
+                TotalRecordsProcessed = rowNumber
+            };
+
+            return Result.Success(meterReadingUploadResult);
         }
     }
 }

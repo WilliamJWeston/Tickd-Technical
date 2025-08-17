@@ -1,6 +1,7 @@
 ﻿using API.Services;
 using Ardalis.Result;
 using Microsoft.AspNetCore.Mvc;
+using Models.Dtos;
 
 namespace API.Controllers
 {
@@ -16,7 +17,7 @@ namespace API.Controllers
         }
 
         [HttpPost("meter-reading-uploads")]
-        public async Task<Result> UploadFile(IFormFile file)
+        public async Task<Result<MeterReadingUploadResultDto>> UploadFile(IFormFile file)
         {
             var result = await _meterReadingService.UploadFile(file);
             return result;

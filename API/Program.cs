@@ -21,6 +21,7 @@ builder.Services.AddCors(options =>
 
 // Ensure MeterReadingService is registered
 builder.Services.AddScoped<MeterReadingService>();
+builder.Services.AddScoped<RepositoryService>();
 
 var app = builder.Build();
 
