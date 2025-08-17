@@ -1,0 +1,27 @@
+# .NET Core
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.csproj.user
+.vs/
+*.db
+*.sqlite
+*.pdb
+*.cache
+*.log
+*.vsidx
+*.vssettings
+
+# NuGet Packages
+*.nupkg
+packages/
+
+# IDEs
+.idea/
+*.code-workspace
+
+# User-specific files
+appsettings.Development.json
