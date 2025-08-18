@@ -1,4 +1,7 @@
+using API;
 using API.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +26,23 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<MeterReadingService>();
 builder.Services.AddScoped<RepositoryService>();
 
+// DB Context
+builder.Services.AddDbContext<TickdDbContext>(options => 
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("TickdDbContext"));
+});
+
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<TickdDbContext>();
+
+    if (!dbContext.Database.CanConnect())
+    {
+        throw new NotImplementedException("Can't connect to the DB.");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
