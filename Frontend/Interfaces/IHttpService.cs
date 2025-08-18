@@ -5,6 +5,6 @@ namespace Frontend.Interfaces
 {
     public interface IHttpService
     {
-        Task<Result> PostFileAsync(string path, IBrowserFile file);
+        Task<Result<T>> PostFileAsync<T>(string path, IBrowserFile file);
     }
 }

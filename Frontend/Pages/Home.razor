@@ -62,6 +62,30 @@
 
         </MudCard>
     </MudItem>
+
+    <MudItem>
+        @if (_uploadResults.Any())
+        {
+            <MudCard Class="mt-6">
+                <MudCardContent>
+                    <MudText Typo="Typo.h5">Upload History</MudText>
+                    <MudTable Items="_uploadResults" Hover="true" Dense="true" Striped="true">
+                        <HeaderContent>
+                            <MudTh>Name</MudTh>
+                            <MudTh>Successful</MudTh>
+                            <MudTh>Failed</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Name">@context.Name</MudTd>
+                            <MudTd DataLabel="Successful">@context.SuccessfulRecords</MudTd>
+                            <MudTd DataLabel="Failed">@context.FailedRecords</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudCardContent>
+            </MudCard>
+        }
+
+    </MudItem>
         
 </MudContainer>
 
@@ -71,6 +95,7 @@
     private FileModelDto model = new();
     private FileUploadFormValidation ValidationRules = new();
     private MudFileUpload<IBrowserFile> _fileUpload;
+    private List<MeterReadingUploadResultDto> _uploadResults = new();
 
     private void UploadFiles(InputFileChangeEventArgs e)
     {
@@ -84,8 +109,19 @@
 
         if (form.IsValid)
         {
-            await meterClientSvc.UploadMeterReadings(model.File);
-            Snackbar.Add("Submitted!");
+            var result = await meterClientSvc.UploadMeterReadings(model.File);
+            if (result.IsSuccess)
+            {
+                MeterReadingUploadResultDto meterReadingUploadResult = result.Value;
+                meterReadingUploadResult.Name = model.Name;
+                _uploadResults.Add(meterReadingUploadResult);
+
+                Snackbar.Add($"Recieved results sucessfully.", Severity.Info);
+            }
+            else
+            {
+                Snackbar.Add($"Failed to recieved results.", Severity.Info);
+            }
         }
     }
 

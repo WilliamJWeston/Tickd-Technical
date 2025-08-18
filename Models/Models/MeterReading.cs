@@ -13,7 +13,7 @@ namespace Models.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        public string AccountId { get; set; }
+        public int AccountId { get; set; }
         public DateTime MeterReadingDateTime { get; set; }
         public int MeterReadValue { get; set; }
     }

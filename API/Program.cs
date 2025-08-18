@@ -1,4 +1,5 @@
 using API;
+using API.Interfaces;
 using API.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -23,8 +24,9 @@ builder.Services.AddCors(options =>
 });
 
 // Ensure MeterReadingService is registered
-builder.Services.AddScoped<MeterReadingService>();
-builder.Services.AddScoped<RepositoryService>();
+builder.Services.AddScoped<IMeterReadingService,MeterReadingService>();
+builder.Services.AddScoped<IRepositoryService,RepositoryService>();
+builder.Services.AddScoped<ICsvReaderService,CsvReaderService>();
 
 // DB Context
 builder.Services.AddDbContext<TickdDbContext>(options => 

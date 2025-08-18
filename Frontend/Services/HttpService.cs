@@ -1,6 +1,7 @@
 ﻿using Ardalis.Result;
 using Frontend.Interfaces;
 using Microsoft.AspNetCore.Components.Forms;
+using System.Text.Json;
 
 namespace Frontend.Services
 {
@@ -15,7 +16,7 @@ namespace Frontend.Services
             _logger = logger;
         }
 
-        public async Task<Result> PostFileAsync(string path, IBrowserFile file)
+        public async Task<Result<T>> PostFileAsync<T>(string path, IBrowserFile file)
         {
             try
             {
@@ -24,9 +25,16 @@ namespace Frontend.Services
 
                 // Post content
                 var response = await _httpClient.PostAsync($"api/{path}", content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
                 if (response.IsSuccessStatusCode)
                 {
-                    return Result.Success();
+                    var result = JsonSerializer.Deserialize<Result<T>>(responseContent, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return result ?? Result.Error("Failed to deserialize server response");
                 }
                 else
                 {

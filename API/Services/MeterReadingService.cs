@@ -12,10 +12,13 @@ namespace API.Services
 {
     public class MeterReadingService : IMeterReadingService
     {
-        private readonly RepositoryService _repository;
-        public MeterReadingService(RepositoryService repository) 
+        private readonly IRepositoryService _repository;
+        private readonly ICsvReaderService _csvReader;
+
+        public MeterReadingService(IRepositoryService repository, ICsvReaderService csvReaderService) 
         {
             _repository = repository;
+            _csvReader = csvReaderService;
         }
 
         public async Task<Result<MeterReadingUploadResultDto>> UploadFile(IFormFile file)
@@ -32,30 +35,35 @@ namespace API.Services
             int rowNumber = 0;
 
             using var stream = file.OpenReadStream();
-            using var reader = new StreamReader(stream);
-            using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
-            {
-                HasHeaderRecord = true,
-                TrimOptions = TrimOptions.Trim,
-                MissingFieldFound = null
-            });
-            csv.Context.RegisterClassMap<MeterReadingMap>();
+            _csvReader.Initialise(stream);
 
-            // Read the CSV header
-            await csv.ReadAsync();
-            csv.ReadHeader();
-
-            // Iterate through the CSV records
-            while (await csv.ReadAsync()) 
+            // Iterate through the CSV records (Would maybe want to batch this if I had enought time? Timeout concerns.)
+            while (await _csvReader.ReadAsync()) 
             { 
                 rowNumber++;
                 try
                 {
                     // Try reading the record
-                    var record = csv.GetRecord<MeterReading>();
+                    var record = _csvReader.GetRecord<MeterReading>();
                     if (record == null)
                     {
                         failedRecords.Add($"Row {rowNumber}: Invalid record format.");
+                    }
+
+                    // Ensure that the record is valid
+                    var validationResult = await ValidateMeterReading(record);
+                    if (!validationResult)
+                    {
+                        failedRecords.Add($"Row {rowNumber}: Invalid record content.");
+                        continue;
+                    }
+
+                    // Check for duplicate values
+                    var recordExists = await _repository.RecordExists(record);
+                    if (recordExists)
+                    {
+                        failedRecords.Add($"Row {rowNumber}: Record exists already.");
+                        continue;
                     }
 
                     // Save the record to DB
@@ -63,6 +71,7 @@ namespace API.Services
                     if (saveResult.IsSuccess)
                     {
                         successfulRecords.Add(record);
+                        continue;
                     }
                     else
                     {
@@ -83,6 +92,17 @@ namespace API.Services
             };
 
             return Result.Success(meterReadingUploadResult);
+        }
+
+        private async Task<bool> ValidateMeterReading(MeterReading record)
+        {
+            var accountExists = await _repository.AccountExists(record.AccountId);
+            if (accountExists && record.MeterReadValue >= 0 && record.MeterReadValue.ToString().Length < 6)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }

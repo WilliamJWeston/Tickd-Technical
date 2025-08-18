@@ -1,4 +1,5 @@
-﻿using API.Services;
+﻿using API.Interfaces;
+using API.Services;
 using Ardalis.Result;
 using Microsoft.AspNetCore.Mvc;
 using Models.Dtos;
@@ -9,9 +10,9 @@ namespace API.Controllers
     [Route("api/[controller]")]
     public class MeterReadingController : ControllerBase
     {
-        private readonly MeterReadingService _meterReadingService;
+        private readonly IMeterReadingService _meterReadingService;
 
-        public MeterReadingController(MeterReadingService meterReadingService)
+        public MeterReadingController(IMeterReadingService meterReadingService)
         {
             _meterReadingService = meterReadingService;
         }

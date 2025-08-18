@@ -8,6 +8,7 @@ namespace Models.Dtos
 {
     public class MeterReadingUploadResultDto
     {
+        public string Name { get; set; }
         public int TotalRecordsProcessed { get; set; }
         public int SuccessfulRecords { get; set; }
         public int FailedRecords { get; set; }
